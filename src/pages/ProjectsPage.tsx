@@ -2,36 +2,41 @@ import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { v4 as uuidv4 } from 'uuid';
 import type { Project, Milestone } from '@/types';
+import { Trash2, CheckCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { progressPercent } from '@/lib/helpers';
-import { Trash2, Plus, CheckCircle } from 'lucide-react';
 
-const PROJECT_COLORS = ['#B2D3C2', '#C5B4E3', '#F4A4B8', '#A8D8EA', '#F5D78E'];
+const PROJECT_COLORS = ['#A8C5A0', '#C5B3D9', '#F5D78E', '#E8A0A0', '#A0C4E8'];
 
 const ProjectsPage: React.FC = () => {
   const { state, dispatch } = useGame();
-  const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [color, setColor] = useState(PROJECT_COLORS[0]);
-  const [milestoneInputs, setMilestoneInputs] = useState<string[]>(['']);
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [color, setColor] = useState<string>(PROJECT_COLORS[0]);
+  const [milestoneInput, setMilestoneInput] = useState<string>('');
+  const [milestones, setMilestones] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const handleAddMilestone = () => {
+    if (!milestoneInput.trim()) return;
+    setMilestones([...milestones, milestoneInput.trim()]);
+    setMilestoneInput('');
+  };
 
   const handleAdd = () => {
     if (!title.trim()) return;
-    const milestones: Milestone[] = milestoneInputs
-      .filter((m) => m.trim())
-      .map((m) => ({ id: uuidv4(), title: m.trim(), completed: false }));
     const project: Project = {
       id: uuidv4(),
       title: title.trim(),
       description: description.trim(),
-      milestones,
-      createdAt: new Date().toISOString(),
       color,
+      createdAt: new Date().toISOString(),
+      milestones: milestones.map((m) => ({ id: uuidv4(), title: m, completed: false })),
     };
     dispatch({ type: 'ADD_PROJECT', payload: project });
     setTitle('');
     setDescription('');
-    setMilestoneInputs(['']);
+    setMilestones([]);
     setShowForm(false);
   };
 
@@ -57,7 +62,7 @@ const ProjectsPage: React.FC = () => {
           />
           <textarea
             className="w-full bg-white rounded-lg px-3 py-2 text-cocoa border border-mist focus:outline-none focus:border-sage"
-            placeholder="Description (optional)"
+            placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
@@ -72,28 +77,28 @@ const ProjectsPage: React.FC = () => {
               />
             ))}
           </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-cocoa">Milestones</p>
-            {milestoneInputs.map((m, i) => (
-              <input
-                key={i}
-                className="w-full bg-white rounded-lg px-3 py-2 text-cocoa border border-mist focus:outline-none focus:border-sage text-sm"
-                placeholder={`Milestone ${i + 1}...`}
-                value={m}
-                onChange={(e) => {
-                  const updated = [...milestoneInputs];
-                  updated[i] = e.target.value;
-                  setMilestoneInputs(updated);
-                }}
-              />
-            ))}
-            <button
-              onClick={() => setMilestoneInputs([...milestoneInputs, ''])}
-              className="text-sm text-sage-dark hover:underline"
-            >
-              + Add milestone
+          <div className="flex gap-2">
+            <input
+              className="flex-1 bg-white rounded-lg px-3 py-2 text-cocoa border border-mist focus:outline-none focus:border-sage"
+              placeholder="Add milestone..."
+              value={milestoneInput}
+              onChange={(e) => setMilestoneInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddMilestone()}
+            />
+            <button onClick={handleAddMilestone} className="bg-mist hover:bg-lavender/50 px-3 py-2 rounded-lg text-cocoa">
+              <Plus size={18} />
             </button>
           </div>
+          {milestones.length > 0 && (
+            <ul className="space-y-1">
+              {milestones.map((m, i) => (
+                <li key={i} className="text-sm text-bark flex items-center gap-2">
+                  <span>📌</span> {m}
+                  <button onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className="text-rose text-xs">✕</button>
+                </li>
+              ))}
+            </ul>
+          )}
           <button onClick={handleAdd} className="bg-sage hover:bg-sage-dark text-cocoa px-4 py-2 rounded-lg font-medium transition-colors">
             Create Project
           </button>
@@ -101,46 +106,50 @@ const ProjectsPage: React.FC = () => {
       )}
 
       <div className="space-y-4">
-        {state.projects.length === 0 && <p className="text-bark text-center py-8">No projects yet. Start a big adventure! 🏔️</p>}
+        {state.projects.length === 0 && (
+          <p className="text-bark text-center py-8">No projects yet. Start an epic quest! 🗺️</p>
+        )}
         {state.projects.map((project) => {
-          const done = project.milestones.filter((m) => m.completed).length;
-          const total = project.milestones.length;
-          const pct = progressPercent(done, total);
+          const completedMs = project.milestones.filter((m) => m.completed).length;
+          const totalMs = project.milestones.length;
+          const pct = progressPercent(completedMs, totalMs);
+          const isExpanded = expanded === project.id;
           return (
-            <div key={project.id} className="bg-cloud rounded-xl p-4" style={{ borderLeft: `4px solid ${project.color}` }}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-cocoa text-lg">{project.title}</h3>
-                  {project.description && <p className="text-sm text-bark">{project.description}</p>}
+            <div key={project.id} className="bg-cloud rounded-xl overflow-hidden">
+              <div
+                className="p-4 cursor-pointer flex items-center gap-3"
+                onClick={() => setExpanded(isExpanded ? null : project.id)}
+              >
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
+                <div className="flex-1">
+                  <h3 className="font-bold text-cocoa">{project.title}</h3>
+                  <p className="text-xs text-bark">{completedMs}/{totalMs} milestones · {pct}%</p>
+                  <div className="mt-1 w-full bg-mist rounded-full h-2">
+                    <div className="bg-sage h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
+                {isExpanded ? <ChevronUp size={18} className="text-bark" /> : <ChevronDown size={18} className="text-bark" />}
                 <button
-                  onClick={() => dispatch({ type: 'DELETE_PROJECT', payload: project.id })}
+                  onClick={(e) => { e.stopPropagation(); dispatch({ type: 'DELETE_PROJECT', payload: project.id }); }}
                   className="text-rose hover:text-rose-dark"
                 >
                   <Trash2 size={18} />
                 </button>
               </div>
-              {total > 0 && (
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-bark mb-1">
-                    <span>{done}/{total} milestones</span>
-                    <span>{pct}%</span>
-                  </div>
-                  <div className="w-full bg-mist rounded-full h-2">
-                    <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: project.color }} />
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    {project.milestones.map((ms) => (
+              {isExpanded && (
+                <div className="px-4 pb-4 space-y-2">
+                  {project.description && <p className="text-sm text-bark">{project.description}</p>}
+                  {project.milestones.map((ms) => (
+                    <div key={ms.id} className="flex items-center gap-2">
                       <button
-                        key={ms.id}
                         onClick={() => dispatch({ type: 'COMPLETE_MILESTONE', payload: { projectId: project.id, milestoneId: ms.id } })}
-                        className={`flex items-center gap-2 text-sm w-full text-left px-2 py-1 rounded hover:bg-mist ${ms.completed ? 'line-through text-bark' : 'text-cocoa'}`}
+                        className={`${ms.completed ? 'text-sage' : 'text-mist hover:text-sage'}`}
                       >
-                        <CheckCircle size={16} className={ms.completed ? 'text-sage' : 'text-mist'} />
-                        {ms.title}
+                        <CheckCircle size={18} />
                       </button>
-                    ))}
-                  </div>
+                      <span className={`text-sm ${ms.completed ? 'line-through text-bark' : 'text-cocoa'}`}>{ms.title}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

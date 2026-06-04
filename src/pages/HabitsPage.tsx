@@ -3,15 +3,15 @@ import { useGame } from '@/context/GameContext';
 import { v4 as uuidv4 } from 'uuid';
 import type { Habit } from '@/types';
 import { getTodayString } from '@/lib/helpers';
-import { Trash2, Plus, CheckCircle } from 'lucide-react';
+import { Trash2, CheckCircle, Plus, Flame } from 'lucide-react';
 
-const HABIT_ICONS = ['💧', '🏃', '📖', '🧘', '💤', '🥗', '🎵', '✍️', '🧹', '🌿'];
+const HABIT_ICONS = ['💧', '🏃', '📖', '🧘', '💤', '🥗', '✍️', '🎵', '🌿', '💪'];
 
 const HabitsPage: React.FC = () => {
   const { state, dispatch } = useGame();
-  const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [icon, setIcon] = useState(HABIT_ICONS[0]);
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [title, setTitle] = useState<string>('');
+  const [icon, setIcon] = useState<string>(HABIT_ICONS[0]);
   const [frequency, setFrequency] = useState<Habit['frequency']>('daily');
   const today = getTodayString();
 
@@ -58,7 +58,9 @@ const HabitsPage: React.FC = () => {
               <button
                 key={ic}
                 onClick={() => setIcon(ic)}
-                className={`text-xl p-1 rounded-lg ${icon === ic ? 'bg-lavender' : 'hover:bg-mist'}`}
+                className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-colors ${
+                  icon === ic ? 'bg-lavender' : 'bg-mist hover:bg-lavender/50'
+                }`}
               >
                 {ic}
               </button>
@@ -84,24 +86,31 @@ const HabitsPage: React.FC = () => {
       )}
 
       <div className="space-y-3">
-        {state.habits.length === 0 && <p className="text-bark text-center py-8">No habits yet. Start building good ones! 🌱</p>}
+        {state.habits.length === 0 && (
+          <p className="text-bark text-center py-8">No habits yet. Start building one! 🌱</p>
+        )}
         {state.habits.map((habit) => {
           const doneToday = habit.completedDates.includes(today);
           return (
-            <div key={habit.id} className="bg-cloud rounded-xl p-4 flex items-center gap-4">
+            <div key={habit.id} className="bg-cloud rounded-xl p-4 flex items-center gap-3">
               <button
                 onClick={() => !doneToday && dispatch({ type: 'COMPLETE_HABIT', payload: habit.id })}
-                className={`text-3xl transition-transform ${doneToday ? 'opacity-50' : 'hover:scale-110'}`}
+                className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all ${
+                  doneToday ? 'bg-sage scale-105' : 'bg-mist hover:bg-sage/50'
+                }`}
                 disabled={doneToday}
               >
-                {doneToday ? <CheckCircle size={28} className="text-sage" /> : <span>{habit.icon}</span>}
+                {habit.icon}
               </button>
               <div className="flex-1">
-                <h3 className={`font-bold ${doneToday ? 'line-through text-bark' : 'text-cocoa'}`}>{habit.title}</h3>
-                <p className="text-xs text-bark">
-                  🔥 Streak: {habit.streak} · Best: {habit.bestStreak} · {habit.frequency}
-                </p>
+                <h3 className={`font-bold ${doneToday ? 'text-sage-dark' : 'text-cocoa'}`}>{habit.title}</h3>
+                <div className="flex gap-2 text-xs text-bark">
+                  <span className="flex items-center gap-0.5"><Flame size={12} /> {habit.streak}</span>
+                  <span>· Best: {habit.bestStreak}</span>
+                  <span>· {habit.frequency}</span>
+                </div>
               </div>
+              {doneToday && <CheckCircle size={20} className="text-sage" />}
               <button
                 onClick={() => dispatch({ type: 'DELETE_HABIT', payload: habit.id })}
                 className="text-rose hover:text-rose-dark"
