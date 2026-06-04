@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-cream: #FFF8F0;
+  --color-peach: #FFDAB9;
+  --color-sage: #B2D3C2;
+  --color-sage-dark: #8BB8A8;
+  --color-lavender: #C5B4E3;
+  --color-lavender-dark: #A68BD4;
+  --color-rose: #F4A4B8;
+  --color-rose-dark: #E8789A;
+  --color-sky: #A8D8EA;
+  --color-sky-dark: #7FC4DB;
+  --color-honey: #F5D78E;
+  --color-honey-dark: #E8C454;
+  --color-bark: #8B7355;
+  --color-bark-dark: #6B5740;
+  --color-cocoa: #5C4033;
+  --color-cloud: #F0EAE2;
+  --color-mist: #E8E0D4;
+}
+
+:root {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-cocoa);
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out;
+}
+
+@keyframes sparkle {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
